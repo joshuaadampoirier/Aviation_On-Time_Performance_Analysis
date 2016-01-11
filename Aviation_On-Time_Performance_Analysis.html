@@ -92,34 +92,228 @@ img {
 <p><span class="math inline">\(target time = 0.117 * distance + 0.517 * (lon origin - lon dest) + 43.2\)</span></p>
 <p>This formula produces an estimated travel time in minutes. <strong>distance</strong> is the Great Circle Distance (shortest distance between two points on the surface of a sphere) and is provided in the data set. The coefficient <strong>0.117</strong> indicates that flights travel at 513 mph. <strong>lonorigin</strong> and <strong>londest</strong> represent the longitudes of the originating and destination airports. 30 seconds of flight time is added for every degree of westbound longitude travelled. The constant <strong>43.2</strong> indicates the time airlines budget for taxiing and inefficient routing (flying around severe weather).</p>
 <p>Let’s take a look at the first few rows of the data!</p>
-<pre><code>##     MONTH DAY_OF_WEEK CARRIER ORIGIN DEST CRS_DEP_TIME ARR_DELAY
-## 1 January   Wednesday      AA    JFK  LAX      Morning        13
-## 2 January    Thursday      AA    JFK  LAX      Morning         1
-## 3 January    Saturday      AA    JFK  LAX      Morning        59
-##   ACTUAL_ELAPSED_TIME DISTANCE           O_AIRPORT   O_CITY O_STATE
-## 1                 384     2475 John F Kennedy Intl New York      NY
-## 2                 389     2475 John F Kennedy Intl New York      NY
-## 3                 379     2475 John F Kennedy Intl New York      NY
-##   O_COUNTRY    O_LAT    O_LONG                  D_AIRPOT      D_CITY
-## 1       USA 40.63975 -73.77893 Los Angeles International Los Angeles
-## 2       USA 40.63975 -73.77893 Los Angeles International Los Angeles
-## 3       USA 40.63975 -73.77893 Los Angeles International Los Angeles
-##   D_STATE D_COUNTRY    D_LAT    D_LONG TARGET_TIME TARGET_DELAY
-## 1      CA       USA 33.94254 -118.4081    355.8483     28.15173
-## 2      CA       USA 33.94254 -118.4081    355.8483     33.15173
-## 3      CA       USA 33.94254 -118.4081    355.8483     23.15173</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">MONTH</th>
+<th align="left">DAY_OF_WEEK</th>
+<th align="left">CARRIER</th>
+<th align="left">ORIGIN</th>
+<th align="left">DEST</th>
+<th align="left">CRS_DEP_TIME</th>
+<th align="right">ARR_DELAY</th>
+<th align="right">ACTUAL_ELAPSED_TIME</th>
+<th align="right">DISTANCE</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">January</td>
+<td align="left">Wednesday</td>
+<td align="left">AA</td>
+<td align="left">JFK</td>
+<td align="left">LAX</td>
+<td align="left">Morning</td>
+<td align="right">13</td>
+<td align="right">384</td>
+<td align="right">2475</td>
+</tr>
+<tr class="even">
+<td align="left">January</td>
+<td align="left">Thursday</td>
+<td align="left">AA</td>
+<td align="left">JFK</td>
+<td align="left">LAX</td>
+<td align="left">Morning</td>
+<td align="right">1</td>
+<td align="right">389</td>
+<td align="right">2475</td>
+</tr>
+<tr class="odd">
+<td align="left">January</td>
+<td align="left">Saturday</td>
+<td align="left">AA</td>
+<td align="left">JFK</td>
+<td align="left">LAX</td>
+<td align="left">Morning</td>
+<td align="right">59</td>
+<td align="right">379</td>
+<td align="right">2475</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr class="header">
+<th align="left">O_AIRPORT</th>
+<th align="left">O_CITY</th>
+<th align="left">O_STATE</th>
+<th align="left">O_COUNTRY</th>
+<th align="right">O_LAT</th>
+<th align="right">O_LONG</th>
+<th align="left">D_AIRPOT</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">John F Kennedy Intl</td>
+<td align="left">New York</td>
+<td align="left">NY</td>
+<td align="left">USA</td>
+<td align="right">40.63975</td>
+<td align="right">-73.77893</td>
+<td align="left">Los Angeles International</td>
+</tr>
+<tr class="even">
+<td align="left">John F Kennedy Intl</td>
+<td align="left">New York</td>
+<td align="left">NY</td>
+<td align="left">USA</td>
+<td align="right">40.63975</td>
+<td align="right">-73.77893</td>
+<td align="left">Los Angeles International</td>
+</tr>
+<tr class="odd">
+<td align="left">John F Kennedy Intl</td>
+<td align="left">New York</td>
+<td align="left">NY</td>
+<td align="left">USA</td>
+<td align="right">40.63975</td>
+<td align="right">-73.77893</td>
+<td align="left">Los Angeles International</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr class="header">
+<th align="left">D_CITY</th>
+<th align="left">D_STATE</th>
+<th align="left">D_COUNTRY</th>
+<th align="right">D_LAT</th>
+<th align="right">D_LONG</th>
+<th align="right">TARGET_TIME</th>
+<th align="right">TARGET_DELAY</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Los Angeles</td>
+<td align="left">CA</td>
+<td align="left">USA</td>
+<td align="right">33.94254</td>
+<td align="right">-118.4081</td>
+<td align="right">355.8483</td>
+<td align="right">28.15173</td>
+</tr>
+<tr class="even">
+<td align="left">Los Angeles</td>
+<td align="left">CA</td>
+<td align="left">USA</td>
+<td align="right">33.94254</td>
+<td align="right">-118.4081</td>
+<td align="right">355.8483</td>
+<td align="right">33.15173</td>
+</tr>
+<tr class="odd">
+<td align="left">Los Angeles</td>
+<td align="left">CA</td>
+<td align="left">USA</td>
+<td align="right">33.94254</td>
+<td align="right">-118.4081</td>
+<td align="right">355.8483</td>
+<td align="right">23.15173</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div id="feature-examination" class="section level2">
 <h2>Feature Examination</h2>
 <p>In this section I take an independent look at the features expected to impact the on-time performance of aircraft.</p>
 <div id="month" class="section level3">
 <h3>Month</h3>
+<p>The <em>month</em> of the flight is expected to impact on-time performance due to the seasonality experienced by the United States. Airports experiencing harsh winter conditions are expected to perform more poorly during the winter months (December through March). To show this, let us establish a null hypothesis stating population means for each month are equal while the alternative hypothesis states the means are not equal (the indices 1 through 7 represent Monday through Sunday).</p>
+<p><span class="math inline">\(H_0: \mu_1 = \mu_2 = \mu_3 = \mu_4 = \mu_5 = \mu_6 = \mu_7\)</span><br />
+<span class="math inline">\(H_\alpha: \mu_1 \neq \mu_2 \neq \mu_3 \neq \mu_4 \neq \mu_5 \neq \mu_6 \neq \mu_7\)</span></p>
+<p>For this, I compute the 95% confidence interval for the mean delays for each month (less the overall mean). If the confidence intervals do not include 0 we reject the null hypothesis.</p>
+<p><strong>Case 1:</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Month</th>
+<th align="right">Lower</th>
+<th align="right">Mean</th>
+<th align="right">Upper</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">April</td>
+<td align="right">-3.466254</td>
+<td align="right">-3.365328</td>
+<td align="right">-3.264401</td>
+</tr>
+<tr class="even">
+<td align="left">February</td>
+<td align="right">1.411596</td>
+<td align="right">1.540049</td>
+<td align="right">1.668503</td>
+</tr>
+<tr class="odd">
+<td align="left">January</td>
+<td align="right">4.512049</td>
+<td align="right">4.654241</td>
+<td align="right">4.796433</td>
+</tr>
+<tr class="even">
+<td align="left">March</td>
+<td align="right">-2.264782</td>
+<td align="right">-2.165042</td>
+<td align="right">-2.065302</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Case 2:</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Month</th>
+<th align="right">Lower</th>
+<th align="right">Mean</th>
+<th align="right">Upper</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">April</td>
+<td align="right">-1.0916424</td>
+<td align="right">-1.0531923</td>
+<td align="right">-1.0147423</td>
+</tr>
+<tr class="even">
+<td align="left">February</td>
+<td align="right">0.9032465</td>
+<td align="right">0.9532444</td>
+<td align="right">1.0032422</td>
+</tr>
+<tr class="odd">
+<td align="left">January</td>
+<td align="right">0.8545432</td>
+<td align="right">0.9031737</td>
+<td align="right">0.9518043</td>
+</tr>
+<tr class="even">
+<td align="left">March</td>
+<td align="right">-0.6113358</td>
+<td align="right">-0.5719228</td>
+<td align="right">-0.5325098</td>
+</tr>
+</tbody>
+</table>
+<p>Since the confidence intervals for each month do not all contain 0 we reject the null hypothesis and state that the mean delays for each month are not equal. This makes them strong candidates for features to be included in the regression model (further analysis will be performed during the modeling).</p>
 </div>
 <div id="day-of-the-week" class="section level3">
 <h3>Day of the Week</h3>
-</div>
-<div id="airline" class="section level3">
-<h3>Airline</h3>
 </div>
 <div id="origin-airport" class="section level3">
 <h3>Origin Airport</h3>
@@ -129,6 +323,9 @@ img {
 </div>
 <div id="time-of-departure" class="section level3">
 <h3>Time of Departure</h3>
+</div>
+<div id="airline" class="section level3">
+<h3>Airline</h3>
 </div>
 </div>
 
