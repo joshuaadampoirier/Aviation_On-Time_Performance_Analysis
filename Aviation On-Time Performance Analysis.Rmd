@@ -5,18 +5,88 @@ date: "Tuesday, January 12, 2016"
 output: html_document
 ---
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+## Abstract
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+This study is inspired by the web application and study by Ritchie King and Nate Silver at fivethirtyeight.com titled *Which Flight Will Get You There Fastest?*.  The web application can be found [here](http://projects.fivethirtyeight.com/flights/).  The accompanying [documentation](http://fivethirtyeight.com/features/how-we-found-the-fastest-flights/) describes what they mean by "fastest" flights: 
 
-```{r}
-summary(cars)
+> Airline A says it will fly you from Seattle to Portland, Oregon, in 45 minutes, but actually takes 60 minutes.  Airline B says it will fly the same route in 75 minutes, and actually takes 70 minutes.  Which flight would you rather take?  That seems easy. Airline A!
+
+I extend this study by considering two cases:  
+
+* **Case 1:** Direct Flight - The consumer wants the fastest flight as defined in the aforementioned study
+* **Case 2:** Connecting Flight - The consumer wants an on-time flight in order to avoid missing a tight connection 
+
+I hypothesize that the 3 best and worst airlines for the two cases are different.  To show this, a multivariate regression model will be built for each case to account for confounding variables including **month**, **day of week**, **origin airport**, **destination airport**, and **time of day** in addition to the **airline**.
+
+``` {r loadData, echo=FALSE, warning=FALSE, message=FALSE}
+library(dplyr)
+
+# load ontime data from files in "data" subdirectory
+#ontime_data <- do.call(rbind, lapply(paste0("data/", dir("data")), read.csv))
+ontime_data <- read.csv("data/2014-01.csv", 
+                        colClasses = c(rep("factor", 5), "character", rep("numeric",3)))
+
+# prep the ontime data for analysis
+ontime_data$MONTH <- as.factor(month.name[ontime_data$MONTH])
+levels(ontime_data$DAY_OF_WEEK) <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+ontime_data$CRS_DEP_TIME <- as.numeric(ontime_data$CRS_DEP_TIME)
+ontime_data$CRS_DEP_TIME <- cut(ontime_data$CRS_DEP_TIME, breaks=c(-1, 459, 1159, 1759, 2359))
+levels(ontime_data$CRS_DEP_TIME) <- c("Evening", "Morning", "Afternoon", "Evening")
+ontime_data <- ontime_data[,-10]
+bad <- is.na(ontime_data$ARR_DELAY)
+ontime_data <- ontime_data[!bad,]
+
+# load airports reference data
+airports <- read.csv("reference_data/airports.csv", 
+                     colClasses = c("factor", rep("character",2), rep("factor",2), rep("numeric", 2)))
+
+# load airline carriers reference data
+carriers <- read.csv("reference_data/carriers.csv",
+                     colClasses = c("factor", "character"))
+
+# join the three data sets
+ontime_data <- inner_join(ontime_data, airports, by=c("ORIGIN"="iata"))
+names(ontime_data)[10:15] <- c("O_AIRPORT", "O_CITY", "O_STATE", "O_COUNTRY", "O_LAT", "O_LONG")
+ontime_data <- inner_join(ontime_data, airports, by=c("DEST"="iata"))
+names(ontime_data)[16:21] <- c("D_AIRPOT", "D_CITY", "D_STATE", "D_COUNTRY", "D_LAT", "D_LONG")
+
+# now that we have airport coordinates - use simplified formula to calculate target time
+ontime_data$TARGET_TIME <- with(ontime_data, 0.117*DISTANCE + 0.517*(O_LONG-D_LONG) + 43.2)
+ontime_data$TARGET_DELAY <- with(ontime_data, ACTUAL_ELAPSED_TIME - TARGET_TIME)
+
+# cleanup memory - we don't need airports or carriers data frames anymore
+rm(airports, carriers)
 ```
 
-You can also embed plots, for example:
+## Introduction
 
-```{r, echo=FALSE}
-plot(cars)
+This study utilizes aviation on-time performance data provided by the United States Department of Transportation [here](http://www.transtats.bts.gov/DL_SelectFields.asp?Table_ID=236&DB_Short_Name=On-Time).  **Case 2** will use the *ARR_DELAY* field to compare against scheduled arrivals.  **Case 1** will use the difference between the gate-to-gate flight time (*ACTUAL_ELAPSED_TIME* field) and the **target time**.  I calculate target time using the simplified formula shown by Ritchie King and Nate Silver.  
+
+$target time = 0.117 * distance + 0.517 * (lon origin - lon dest) + 43.2$  
+
+This formula produces an estimated travel time in minutes.  **distance** is the Great Circle Distance (shortest distance between two points on the surface of a sphere) and is provided in the data set.  The coefficient **0.117** indicates that flights travel at 513 mph.  **lonorigin** and **londest** represent the longitudes of the originating and destination airports.  30 seconds of flight time is added for every degree of westbound longitude travelled.  The constant **43.2** indicates the time airlines budget for taxiing and inefficient routing (flying around severe weather).
+
+Let's take a look at the first few rows of the data!
+
+```{r previewData, echo=FALSE}
+head(ontime_data, 3)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+## Feature Examination
+
+In this section I take an independent look at the features expected to impact the on-time performance of aircraft.
+
+### Month
+
+### Day of the Week
+
+### Airline
+
+### Origin Airport
+
+### Destination Airport
+
+### Time of Departure
+
+
+
