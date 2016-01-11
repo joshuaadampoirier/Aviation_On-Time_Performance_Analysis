@@ -88,10 +88,10 @@ img {
 </div>
 <div id="introduction" class="section level2">
 <h2>Introduction</h2>
-<p>This study utilizes aviation on-time performance data provided by the United States Department of Transportation <a href="http://www.transtats.bts.gov/DL_SelectFields.asp?Table_ID=236&amp;DB_Short_Name=On-Time">here</a>. <strong>Case 2</strong> will use the <em>ARR_DELAY</em> field to compare against scheduled arrivals. <strong>Case 1</strong> will use the difference between the gate-to-gate flight time (<em>ACTUAL_ELAPSED_TIME</em> field) and the <strong>target time</strong>. I calculate target time using the simplified formula shown by Ritchie King and Nate Silver.</p>
+<p>This study utilizes aviation on-time performance data provided by the United States Department of Transportation <a href="http://www.transtats.bts.gov/DL_SelectFields.asp?Table_ID=236&amp;DB_Short_Name=On-Time">here</a>. The study analyzes <strong>1812011</strong> flights and includes hundreds of dummy variables in the culminating multivariate regression model comparing Cases 1 and 2. <strong>Case 2</strong> will use the <em>ARR_DELAY</em> field to compare against scheduled arrivals. <strong>Case 1</strong> will use the difference between the gate-to-gate flight time (<em>ACTUAL_ELAPSED_TIME</em> field) and the <strong>target time</strong>. I calculate target time using the simplified formula shown by Ritchie King and Nate Silver.</p>
 <p><span class="math inline">\(target time = 0.117 * distance + 0.517 * (lon origin - lon dest) + 43.2\)</span></p>
 <p>This formula produces an estimated travel time in minutes. <strong>distance</strong> is the Great Circle Distance (shortest distance between two points on the surface of a sphere) and is provided in the data set. The coefficient <strong>0.117</strong> indicates that flights travel at 513 mph. <strong>lonorigin</strong> and <strong>londest</strong> represent the longitudes of the originating and destination airports. 30 seconds of flight time is added for every degree of westbound longitude travelled. The constant <strong>43.2</strong> indicates the time airlines budget for taxiing and inefficient routing (flying around severe weather).</p>
-<p>Let’s take a look at the first few rows of the data!</p>
+<p>In the interest of conciseness, the code used to produce these results is omitted from this report; however, it is available in the R Markdown file used to produce this report <a href="https://github.com/joshuaadampoirier/Aviation_On-Time_Performance_Analysis">here</a>. Let’s take a look at the first few rows of the raw data!</p>
 <table>
 <thead>
 <tr class="header">
@@ -102,127 +102,57 @@ img {
 <th align="left">DEST</th>
 <th align="left">CRS_DEP_TIME</th>
 <th align="right">ARR_DELAY</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">1</td>
+<td align="left">3</td>
+<td align="left">AA</td>
+<td align="left">JFK</td>
+<td align="left">LAX</td>
+<td align="left">0900</td>
+<td align="right">13</td>
+</tr>
+<tr class="even">
+<td align="left">1</td>
+<td align="left">4</td>
+<td align="left">AA</td>
+<td align="left">JFK</td>
+<td align="left">LAX</td>
+<td align="left">0900</td>
+<td align="right">1</td>
+</tr>
+<tr class="odd">
+<td align="left">1</td>
+<td align="left">6</td>
+<td align="left">AA</td>
+<td align="left">JFK</td>
+<td align="left">LAX</td>
+<td align="left">0900</td>
+<td align="right">59</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr class="header">
 <th align="right">ACTUAL_ELAPSED_TIME</th>
 <th align="right">DISTANCE</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left">January</td>
-<td align="left">Wednesday</td>
-<td align="left">AA</td>
-<td align="left">JFK</td>
-<td align="left">LAX</td>
-<td align="left">Morning</td>
-<td align="right">13</td>
 <td align="right">384</td>
 <td align="right">2475</td>
 </tr>
 <tr class="even">
-<td align="left">January</td>
-<td align="left">Thursday</td>
-<td align="left">AA</td>
-<td align="left">JFK</td>
-<td align="left">LAX</td>
-<td align="left">Morning</td>
-<td align="right">1</td>
 <td align="right">389</td>
 <td align="right">2475</td>
 </tr>
 <tr class="odd">
-<td align="left">January</td>
-<td align="left">Saturday</td>
-<td align="left">AA</td>
-<td align="left">JFK</td>
-<td align="left">LAX</td>
-<td align="left">Morning</td>
-<td align="right">59</td>
 <td align="right">379</td>
 <td align="right">2475</td>
-</tr>
-</tbody>
-</table>
-<table>
-<thead>
-<tr class="header">
-<th align="left">O_AIRPORT</th>
-<th align="left">O_CITY</th>
-<th align="left">O_STATE</th>
-<th align="left">O_COUNTRY</th>
-<th align="right">O_LAT</th>
-<th align="right">O_LONG</th>
-<th align="left">D_AIRPOT</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">John F Kennedy Intl</td>
-<td align="left">New York</td>
-<td align="left">NY</td>
-<td align="left">USA</td>
-<td align="right">40.63975</td>
-<td align="right">-73.77893</td>
-<td align="left">Los Angeles International</td>
-</tr>
-<tr class="even">
-<td align="left">John F Kennedy Intl</td>
-<td align="left">New York</td>
-<td align="left">NY</td>
-<td align="left">USA</td>
-<td align="right">40.63975</td>
-<td align="right">-73.77893</td>
-<td align="left">Los Angeles International</td>
-</tr>
-<tr class="odd">
-<td align="left">John F Kennedy Intl</td>
-<td align="left">New York</td>
-<td align="left">NY</td>
-<td align="left">USA</td>
-<td align="right">40.63975</td>
-<td align="right">-73.77893</td>
-<td align="left">Los Angeles International</td>
-</tr>
-</tbody>
-</table>
-<table>
-<thead>
-<tr class="header">
-<th align="left">D_CITY</th>
-<th align="left">D_STATE</th>
-<th align="left">D_COUNTRY</th>
-<th align="right">D_LAT</th>
-<th align="right">D_LONG</th>
-<th align="right">TARGET_TIME</th>
-<th align="right">TARGET_DELAY</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">Los Angeles</td>
-<td align="left">CA</td>
-<td align="left">USA</td>
-<td align="right">33.94254</td>
-<td align="right">-118.4081</td>
-<td align="right">355.8483</td>
-<td align="right">28.15173</td>
-</tr>
-<tr class="even">
-<td align="left">Los Angeles</td>
-<td align="left">CA</td>
-<td align="left">USA</td>
-<td align="right">33.94254</td>
-<td align="right">-118.4081</td>
-<td align="right">355.8483</td>
-<td align="right">33.15173</td>
-</tr>
-<tr class="odd">
-<td align="left">Los Angeles</td>
-<td align="left">CA</td>
-<td align="left">USA</td>
-<td align="right">33.94254</td>
-<td align="right">-118.4081</td>
-<td align="right">355.8483</td>
-<td align="right">23.15173</td>
 </tr>
 </tbody>
 </table>
@@ -248,28 +178,28 @@ img {
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left">April</td>
-<td align="right">-3.466254</td>
-<td align="right">-3.365328</td>
-<td align="right">-3.264401</td>
-</tr>
-<tr class="even">
-<td align="left">February</td>
-<td align="right">1.411596</td>
-<td align="right">1.540049</td>
-<td align="right">1.668503</td>
-</tr>
-<tr class="odd">
-<td align="left">January</td>
+<td align="left">1</td>
 <td align="right">4.512049</td>
 <td align="right">4.654241</td>
 <td align="right">4.796433</td>
 </tr>
 <tr class="even">
-<td align="left">March</td>
+<td align="left">2</td>
+<td align="right">1.411596</td>
+<td align="right">1.540049</td>
+<td align="right">1.668503</td>
+</tr>
+<tr class="odd">
+<td align="left">3</td>
 <td align="right">-2.264782</td>
 <td align="right">-2.165042</td>
 <td align="right">-2.065302</td>
+</tr>
+<tr class="even">
+<td align="left">4</td>
+<td align="right">-3.466254</td>
+<td align="right">-3.365328</td>
+<td align="right">-3.264401</td>
 </tr>
 </tbody>
 </table>
@@ -285,28 +215,28 @@ img {
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left">April</td>
-<td align="right">-1.0916424</td>
-<td align="right">-1.0531923</td>
-<td align="right">-1.0147423</td>
-</tr>
-<tr class="even">
-<td align="left">February</td>
-<td align="right">0.9032465</td>
-<td align="right">0.9532444</td>
-<td align="right">1.0032422</td>
-</tr>
-<tr class="odd">
-<td align="left">January</td>
+<td align="left">1</td>
 <td align="right">0.8545432</td>
 <td align="right">0.9031737</td>
 <td align="right">0.9518043</td>
 </tr>
 <tr class="even">
-<td align="left">March</td>
+<td align="left">2</td>
+<td align="right">0.9032465</td>
+<td align="right">0.9532444</td>
+<td align="right">1.0032422</td>
+</tr>
+<tr class="odd">
+<td align="left">3</td>
 <td align="right">-0.6113358</td>
 <td align="right">-0.5719228</td>
 <td align="right">-0.5325098</td>
+</tr>
+<tr class="even">
+<td align="left">4</td>
+<td align="right">-1.0916424</td>
+<td align="right">-1.0531923</td>
+<td align="right">-1.0147423</td>
 </tr>
 </tbody>
 </table>
