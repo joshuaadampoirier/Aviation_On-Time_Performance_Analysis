@@ -53,8 +53,8 @@ In this section I take an independent look at each feature expected to impact th
 
 The *month* of the flight is expected to impact on-time performance due to the seasonality experienced by the United States.  Airports experiencing harsh winter conditions are expected to perform more poorly during the winter months (December through March).  To show this, let us establish a null hypothesis stating population means for each month are equal while the alternative hypothesis states the means are not equal (the indices 1 through 12 represent January through December).
 
-$H_0: \mu_1 = \mu_2 = \mu_3 = ... = \mu_12$  
-$H_\alpha: \mu_1 \neq \mu_2 \neq \mu_3 \neq ... \neq \mu_12$
+$H_0: 0 = \mu_1 = \mu_2 = \mu_3 = ... = \mu_12$  
+$H_\alpha: 0 \neq \mu_1 \neq \mu_2 \neq \mu_3 \neq ... \neq \mu_12$
 
 For this, I compute the 95% confidence interval for the mean delays for each month (less the overall mean).  If all confidence intervals do not include 0 we reject the null hypothesis.  
 
@@ -78,14 +78,14 @@ For this, I compute the 95% confidence interval for the mean delays for each mon
 |3  | -2.264782| -2.165042| -2.065302|
 |4  | -3.466254| -3.365328| -3.264401|
 
-Since the confidence intervals for each month do not all contain 0 we reject the null hypothesis and state that the mean delays for each month are not equal.  This makes them strong candidates for features to be included in the regression model (further analysis will be performed during the modeling).
+Since the confidence intervals for each month do not all contain 0 we reject the null hypothesis and state that the mean delays for each month are not equal.  Therefore we include **Month** as a variable in the final model.
 
 ### Day of the Week
 
-The *day of week* of the flight is expected to impact on-time performance due to employee scheduling, and different types of passengers for different days of the week.  Airport/airline staff do not work seven days per week so it is fair to suggest there may be fluctuations in airport/airline efficiencies due to staffing levels as well as the experience and efficiency of staff on duty.  Business travellers are expected to be more likely on week days; while, personal travellers (including families) are expected to be more likely on weekends.  The type of passenger (not recorded in this data set) may generate small departure delays due to increased boarding times and ultimately scheduled arrival delays.  For each case I establish a null hypothesis stating that the mean delays for each day of the week are equal while the alternative hypothesis states they are not all equal (the indices 1 through 7 represent Monday through Sunday).
+The *day of week* of the flight is expected to impact on-time performance due to employee scheduling, and different types of passengers for different days of the week.  Airport/airline staff do not work seven days per week so it is fair to suggest there may be fluctuations in airport/airline efficiencies due to staffing levels as well as the experience and efficiency of staff on duty.  Business travellers are expected to be more likely on week days; while, personal travellers (including families) are expected to be more likely on weekends.  The type of passenger (not recorded in this data set) may generate small departure delays due to increased boarding times and ultimately scheduled arrival delays.  For each case I establish a null hypothesis stating that the mean delays for each day of the week are equal to 0; while, the alternative hypothesis states they are not all equal (the indices 1 through 7 represent Monday through Sunday).
 
-$H_0: \mu_1 = \mu_2 = \mu_3 = ... = \mu_7$  
-$H_\alpha: \mu_1 \neq \mu_2 \neq \mu_3 \neq ... \neq \mu_7$
+$H_0: 0 = \mu_1 = \mu_2 = \mu_3 = ... = \mu_7$  
+$H_\alpha: 0 \neq \mu_1 \neq \mu_2 \neq \mu_3 \neq ... \neq \mu_7$
 
 For this, I compute the 95% confidence interval for the mean delays for each day of the week (less the overall mean).  If all confidence intervals do not include 0 we reject the null hypothesis.
 
@@ -115,15 +115,62 @@ For this, I compute the 95% confidence interval for the mean delays for each day
 |Sat | -1.0665237| -0.8910790| -0.7156344|
 |Sun | -0.7267779| -0.5689149| -0.4110519|
 
-As shown in the above plot and tables, not all of the confidence intervals include 0.  Therefore, we reject the null hypothesis and consider it a strong candidate for inclusion in the final regression model.
+As shown in the above plot and tables, not all of the confidence intervals include 0.  Therefore, we reject the null hypothesis and include **Day of Week** as a variable in the final model.
 
 ### Origin Airport
 
+Airports are a key factor impacting the on-time performance of flights.  Design, length of taxi, traffic volume are but some of the airport-specific features contributing to on-time flight performance.  The data set being analyzed features 303 origin airports.  As a result we'll visualize it a bit differently.  We still perform a hypothesis testing (the indices represent different airports).
+
+$H_0: 0 = \mu_1 = \mu_2 = \mu_3 = ... = \mu_n$  
+$H_\alpha: = \neq \mu_1 \neq \mu_2 \neq \mu_3 \neq ... \neq \mu_n$
+
+For this, I compute the 95% confidence interval for the mean delays for each day of the week (less the overall mean).  If all confidence intervals do not include 0 we reject the null hypothesis.
+
+![plot of chunk originHet](figure/originHet-1.png) ![plot of chunk originHet](figure/originHet-2.png) 
+
+The above plots show that some of the origin airport categories *pass* the hypothesis test; however, the hypothesis test states that the mean for each origin airport must be 0 in order to pass.  Since many of the airports fail the test, we reject the null hypothesis and include the origin airport as a variable in the model.
+
 ### Destination Airport
+
+Airports are a key factor impacting the on-time performance of flights.  Design, length of taxi, traffic volume are but some of the airport-specific features contributing to on-time flight performance.  The data set being analyzed features 303 destination airports.  As a result we'll visualize it a bit differently.  We still perform a hypothesis testing (the indices represent different airports).
+
+$H_0: 0 = \mu_1 = \mu_2 = \mu_3 = ... = \mu_n$  
+$H_\alpha: = \neq \mu_1 \neq \mu_2 \neq \mu_3 \neq ... \neq \mu_n$
+
+For this, I compute the 95% confidence interval for the mean delays for each day of the week (less the overall mean).  If all confidence intervals do not include 0 we reject the null hypothesis.
+
+![plot of chunk destHet](figure/destHet-1.png) ![plot of chunk destHet](figure/destHet-2.png) 
+
+The above plots show that some of the destination airport categories *pass* the hypothesis test; however, the hypothesis test states that the mean for each origin airport must be 0 in order to pass.  Since many of the airports fail the test, we reject the null hypothesis and include the destination airport as a variable in the model.
 
 ### Time of Departure
 
-The *time of day* of the flight is expected to impact on-time performance.  A possible mechanism for this is that aircraft typically service multiple flights per day.  Delayed flights in the morning will have a cascading effect on later flights using the same aircraft.  For this analysis we cut the continuous time data into **Morning** (05:00-11:59), **Afternoon** (12:00-17:59), and **Evening** (18:00-23:59 and 00:00-04:59) to match filtering options offered by flight retailers such as [Expedia](https://www.expedia.com/).
+The *time of day* of the flight is expected to impact on-time performance.  A possible mechanism for this is that aircraft typically service multiple flights per day.  Delayed flights in the morning will have a cascading effect on later flights using the same aircraft.  For this analysis we cut the continuous time data into **Morning** (05:00-11:59), **Afternoon** (12:00-17:59), and **Evening** (18:00-23:59 and 00:00-04:59) to match filtering options offered by flight retailers such as [Expedia](https://www.expedia.com/).  For each case (Direct vs. Connecting) I establish a null hypothesis stating that the mean delays for each time of day category are equal to 0; while, the alternative hypothesis states they are not all equal (the indices 1 through 3 indicate morning, afternoon, and evening).
+
+$H_0: 0 = \mu_1 = \mu_2 = \mu_3 = ... = \mu_7$  
+$H_\alpha: 0 \neq \mu_1 \neq \mu_2 \neq \mu_3 \neq ... \neq \mu_7$
+
+For this, I compute the 95% confidence interval for the mean delays for each day of the week (less the overall mean).  If all confidence intervals do not include 0 we reject the null hypothesis.
+
+
+
+![plot of chunk plotTimeCI](figure/plotTimeCI-1.png) 
+
+|X         |     Lower1|      Mean1|     Upper1|
+|:---------|----------:|----------:|----------:|
+|Evening   | -2.2404045| -2.1934504| -2.1464962|
+|Morning   |  1.2423995|  1.2771603|  1.3119212|
+|Afternoon | -0.2085845| -0.1734742| -0.1383638|
+
+
+
+|X         |    Lower2|     Mean2|    Upper2|
+|:---------|---------:|---------:|---------:|
+|Evening   |  3.548455|  3.682318|  3.816181|
+|Morning   | -4.637972| -4.551448| -4.464924|
+|Afternoon |  2.763639|  2.861699|  2.959758|
+
+Interestingly we observe opposite relationships between the two cases.  This may reflect shifting scheduled flight times to accommodate varying taxi times, and weather patterns (midday convective currents for example) throughout the day.  Since not all of the 95% confidence intervals include 0, we reject the null hypothesis and include the variable in the final model.
 
 ### Airline
 
