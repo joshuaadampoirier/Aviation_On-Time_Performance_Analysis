@@ -16,7 +16,7 @@ My criticism of this approach is that it does not consider connecting passengers
 * **Case 1:** Direct Flight - The consumer wants the fastest flight as defined in the aforementioned study.  This is defined as the difference between the actual arrival time and the target arrival time.
 * **Case 2:** Connecting Flight - The consumer wants an on-time flight in order to avoid missing a tight connection.  This is defined as the difference between the actual arrival time and the scheduled arrival time.
 
-I hypothesize that the 3 best and worst airlines for the two cases are different.  To show this, a multivariate regression model will be built for each case to account for confounding variables including **month**, **day of week**, **origin airport**, **destination airport**, and **time of day** in addition to the **airline** variable.
+I hypothesize that the 3 best airlines for the two cases are different.  To show this, a multivariate regression model will be built for each case to account for confounding variables including **month**, **day of week**, **origin airport**, **destination airport**, and **time of day** in addition to the **airline** variable.
 
 
 
@@ -33,9 +33,9 @@ In the interest of conciseness, the code used to produce these results is omitte
 
 |MONTH |DAY_OF_WEEK |CARRIER |ORIGIN |DEST |CRS_DEP_TIME | ARR_DELAY|
 |:-----|:-----------|:-------|:------|:----|:------------|---------:|
-|1     |3           |AA      |JFK    |LAX  |0900         |        13|
-|1     |4           |AA      |JFK    |LAX  |0900         |         1|
-|1     |6           |AA      |JFK    |LAX  |0900         |        59|
+|Jan   |3           |AA      |JFK    |LAX  |0900         |        13|
+|Jan   |4           |AA      |JFK    |LAX  |0900         |         1|
+|Jan   |6           |AA      |JFK    |LAX  |0900         |        59|
 
 
 
@@ -45,7 +45,61 @@ In the interest of conciseness, the code used to produce these results is omitte
 |                 389|     2475|
 |                 379|     2475|
 
-## Feature Examination
+## Model Building
+
+
+
+**Month**, **Day of Week**, **Origin airport**, **Destination airport**, and **Scheduled departure time** are confounders which are included in the linear regression model in addition to **airline/carrier**.  The **APPENDIX** analyzes these confounders on an independent basis to illustrate that they indeed impact on-time flight performance using hypothesis tests and confidence intervals.  
+
+Due to the computational complexity and size of the data set, a single linear regression model could not be computed using the entire data set.  As such, I will apply the Monte Carlo method to build **10** linear regression models for each case based on random **1**% samples of the data set (without replacement).  The null hypothesis states that the means for each airline (for each case) are equal; while, the alternate hypothesis states that the means are not equal.
+
+$H_0: 0 = \mu_1 = \mu_2 = \mu_3 = ... = \mu_12$  
+$H_\alpha: 0 \neq \mu_1 \neq \mu_2 \neq \mu_3 \neq ... \neq \mu_12$
+
+To evaluate the null hypothesis I compute the 95% confidence interval of the mean delay for each case.  If the confidence intervals do not all overlap we reject the null hypothesis.
+
+
+
+|Carrier |     Lower1|      Mean1|     Upper1|    Lower2|      Mean2|     Upper2|
+|:-------|----------:|----------:|----------:|---------:|----------:|----------:|
+|AS      |  2.0072375|  2.6053170|  3.2033966| -5.675359| -4.4435276| -3.2116964|
+|B6      | -1.5998535| -1.1962783| -0.7927031|  5.771006|  7.4853378|  9.1996700|
+|DL      | -0.7722744| -0.3999910| -0.0277077|  2.173107|  3.3022240|  4.4313408|
+|EV      |  0.8755450|  1.3636409|  1.8517367|  9.584549| 10.5266526| 11.4687565|
+|F9      | -2.3452211| -1.7599963| -1.1747716|  5.480216|  7.6523299|  9.8244439|
+|FL      | -3.3253686| -2.8400895| -2.3548103| -1.006703|  0.8421222|  2.6909473|
+|HA      |  0.8187973|  2.0566600|  3.2945226| -4.688502|  0.7729921|  6.2344867|
+|MQ      |  2.0132742|  2.4178206|  2.8223670|  5.160540|  6.4661345|  7.7717293|
+|OO      |  3.6427207|  4.1228876|  4.6030544|  2.874141|  4.5548483|  6.2355552|
+|UA      | -1.9779547| -1.3670423| -0.7561299| -2.668806| -1.6330639| -0.5973217|
+|US      |  0.3704770|  0.8467397|  1.3230024| -2.556134| -1.2256202|  0.1048938|
+|VX      | -2.0446191| -1.6825393| -1.3204596| -3.083781| -0.6429801|  1.7978208|
+|WN      | -3.8364123| -3.4267270| -3.0170416|  7.563363|  8.7703416|  9.9773199|
+
+The above table shows that the confidence intervals (ranging from the value *Lower1* to *Upper1* and *Lower2* to *Upper2* for Case 1: Direct and Case2: Connecting respectively) do not overlap; therefore, we reject the null hypothesis and state that the airline/carrier impacts the on-time flight performance for both cases.
+
+## Conclusions
+
+The top 3 airlines for Case 1: Optimizing for a direct flight, and Case 2: Optimizing for a connecting flight are shown below.
+
+
+|Airline                     | Mean Delay (min)|
+|:---------------------------|----------------:|
+|Southwest Airlines Co.      |        -3.426727|
+|AirTran Airways Corporation |        -2.840089|
+|Frontier Airlines Inc.      |        -1.759996|
+
+
+
+|Airline                                                                             | Mean Delay (min)|
+|:-----------------------------------------------------------------------------------|----------------:|
+|Alaska Airlines Inc.                                                                |        -4.443528|
+|United Air Lines Inc.                                                               |        -1.633064|
+|US Airways Inc. (Merged with America West 9/05. Reporting for both starting 10/07.) |        -1.225620|
+
+The hypothesis is thereby confirmed as the top 3 airlines for on-time performance for the two cases are not the same.  Southwest Airlines Co. on average arrives at their destination 3.43 minutes early relative to an independently calculated target time (**Case 1: Direct Flight Optimization**).  Alaska Airlines Inc. on average arrives at their destination 4.44 minutes early relative to their own scheduling (**Case 2: Connecting Flight Optimization**) - making them the best option for a connecting flight.
+
+# APPENDIX
 
 In this section I take an independent look at each feature expected to impact the on-time performance of aircraft.
 
@@ -60,23 +114,28 @@ For this, I compute the 95% confidence interval for the mean delays for each mon
 
 
 
+
+```
+## Use suppressPackageStartupMessages to eliminate package startup messages.
+```
+
 ![plot of chunk plotMonthCI](figure/plotMonthCI-1.png) 
 
-|X  |     Lower1|      Mean1|     Upper1|
-|:--|----------:|----------:|----------:|
-|1  |  0.8545432|  0.9031737|  0.9518043|
-|2  |  0.9032465|  0.9532444|  1.0032422|
-|3  | -0.6113358| -0.5719228| -0.5325098|
-|4  | -1.0916424| -1.0531923| -1.0147423|
+|X   |     Lower1|      Mean1|     Upper1|
+|:---|----------:|----------:|----------:|
+|Apr | -1.0916424| -1.0531923| -1.0147423|
+|Feb |  0.9032465|  0.9532444|  1.0032422|
+|Jan |  0.8545432|  0.9031737|  0.9518043|
+|Mar | -0.6113358| -0.5719228| -0.5325098|
 
 
 
-|X  |    Lower2|     Mean2|    Upper2|
-|:--|---------:|---------:|---------:|
-|1  |  4.512049|  4.654241|  4.796433|
-|2  |  1.411596|  1.540049|  1.668503|
-|3  | -2.264782| -2.165042| -2.065302|
-|4  | -3.466254| -3.365328| -3.264401|
+|X   |    Lower2|     Mean2|    Upper2|
+|:---|---------:|---------:|---------:|
+|Apr | -3.466254| -3.365328| -3.264401|
+|Feb |  1.411596|  1.540049|  1.668503|
+|Jan |  4.512049|  4.654241|  4.796433|
+|Mar | -2.264782| -2.165042| -2.065302|
 
 Since the confidence intervals for each month do not all contain 0 we reject the null hypothesis and state that the mean delays for each month are not equal.  Therefore we include **Month** as a variable in the final model.
 
@@ -158,43 +217,18 @@ For this, I compute the 95% confidence interval for the mean delays for each day
 
 |X         |     Lower1|      Mean1|     Upper1|
 |:---------|----------:|----------:|----------:|
-|Evening   | -2.2404045| -2.1934504| -2.1464962|
 |Morning   |  1.2423995|  1.2771603|  1.3119212|
 |Afternoon | -0.2085845| -0.1734742| -0.1383638|
+|Evening   | -2.2404045| -2.1934504| -2.1464962|
 
 
 
 |X         |    Lower2|     Mean2|    Upper2|
 |:---------|---------:|---------:|---------:|
-|Evening   |  3.548455|  3.682318|  3.816181|
 |Morning   | -4.637972| -4.551448| -4.464924|
 |Afternoon |  2.763639|  2.861699|  2.959758|
+|Evening   |  3.548455|  3.682318|  3.816181|
 
 Interestingly we observe opposite relationships between the two cases.  This may reflect shifting scheduled flight times to accommodate varying taxi times, and weather patterns (midday convective currents for example) throughout the day.  Since not all of the 95% confidence intervals include 0, we reject the null hypothesis and include the variable in the final model.
 
-### Airline
 
-## Reusable Code
-
-
-```r
-library(ggplot2)
-library(reshape2)
-
-# merge dataframes of two cases and clean data
-df <- inner_join(df1, df2, by="X")
-df <- melt(df, id.vars="X")
-df$variable <- as.character(df$variable)
-df$Case <- as.factor(substr(df$variable, nchar(df$variable), nchar(df$variable)))
-levels(df$Case) <- c("Case 1: Direct Flight", "Case 2: Connecting Flight")
-
-# plot confidence interval data for the two cases
-ggplot(df, aes(X, value, col=Case)) + 
-    geom_line(size=10, alpha=0.3) + geom_point(col="black", size=5, pch="-") +
-    geom_hline(yintercept=0, size=1) +
-    labs(title=t, x=xl, y="Delay (min)")
-
-# output confidence interval table for the two cases
-knitr::kable(df1, caption="Case 1: Direct Flight")
-knitr::kable(df2, caption="Case 2: Connecting Flight")
-```

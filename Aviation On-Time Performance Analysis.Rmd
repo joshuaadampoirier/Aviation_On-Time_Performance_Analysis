@@ -16,42 +16,38 @@ My criticism of this approach is that it does not consider connecting passengers
 * **Case 1:** Direct Flight - The consumer wants the fastest flight as defined in the aforementioned study.  This is defined as the difference between the actual arrival time and the target arrival time.
 * **Case 2:** Connecting Flight - The consumer wants an on-time flight in order to avoid missing a tight connection.  This is defined as the difference between the actual arrival time and the scheduled arrival time.
 
-I hypothesize that the 3 best and worst airlines for the two cases are different.  To show this, a multivariate regression model will be built for each case to account for confounding variables including **month**, **day of week**, **origin airport**, **destination airport**, and **time of day** in addition to the **airline** variable.
+I hypothesize that the 3 best airlines for the two cases are different.  To show this, a multivariate regression model will be built for each case to account for confounding variables including **month**, **day of week**, **origin airport**, **destination airport**, and **time of day** in addition to the **airline** variable.
 
-``` {r loadData, echo=FALSE, warning=FALSE, message=FALSE}
+``` {r loadData, echo=FALSE, warning=FALSE, message=FALSE, cache=TRUE}
 library(dplyr)
 
 # load ontime data from files in "data" subdirectory
 ontime_data <- do.call(rbind, lapply(paste0("data/", dir("data")), read.csv,
                                      colClasses = c(rep("factor", 5), "character", rep("numeric",3))))
-#ontime_data <- read.csv("data/2014-01.csv", 
-#                        colClasses = c(rep("factor", 5), "character", rep("numeric",3)))
 
 # prep the ontime data for analysis
 ontime_data <- ontime_data[,-10]
 bad <- is.na(ontime_data$ARR_DELAY)
 ontime_data <- ontime_data[!bad,]
+ontime_data$MONTH <- as.factor(month.abb[as.numeric(ontime_data$MONTH)])
 
 # load airports reference data
 airports <- read.csv("reference_data/airports.csv", 
-                     colClasses = c("factor", rep("character",2), rep("factor",2), rep("numeric", 2)))
+                     colClasses = c(rep("factor",5), rep("numeric", 2)))
 
 # load airline carriers reference data
 carriers <- read.csv("reference_data/carriers.csv",
-                     colClasses = c("factor", "character"))
+                     colClasses = c(rep("factor",2)))
 
-# join the three data sets
+# join the ontime data and the airport data
 ontime_data <- inner_join(ontime_data, airports, by=c("ORIGIN"="iata"))
 names(ontime_data)[10:15] <- c("O_AIRPORT", "O_CITY", "O_STATE", "O_COUNTRY", "O_LAT", "O_LONG")
 ontime_data <- inner_join(ontime_data, airports, by=c("DEST"="iata"))
-names(ontime_data)[16:21] <- c("D_AIRPOT", "D_CITY", "D_STATE", "D_COUNTRY", "D_LAT", "D_LONG")
+names(ontime_data)[16:21] <- c("D_AIRPORT", "D_CITY", "D_STATE", "D_COUNTRY", "D_LAT", "D_LONG")
 
 # now that we have airport coordinates - use simplified formula to calculate target time
 ontime_data$TARGET_TIME <- with(ontime_data, 0.117*DISTANCE + 0.517*(O_LONG-D_LONG) + 43.2)
 ontime_data$TARGET_DELAY <- with(ontime_data, ACTUAL_ELAPSED_TIME - TARGET_TIME)
-
-# cleanup memory - we don't need airports or carriers data frames anymore
-rm(airports, carriers)
 ```
 
 ## Introduction
@@ -70,7 +66,111 @@ knitr::kable(head(ontime_data, 3)[,1:7], caption="First few rows of raw data")
 knitr::kable(head(ontime_data, 3)[,8:9])
 ```
 
-## Feature Examination
+## Model Building
+
+```{r modPrep, echo=FALSE}
+# constants for number of monte carlo simulations and fraction of data to sample
+n <- 9
+p <- 1
+
+# prep data for modeling
+levels(ontime_data$DAY_OF_WEEK) <- c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+ontime_data$ORIGIN <- as.factor(ontime_data$ORIGIN)
+ontime_data$DEST <- as.factor(ontime_data$DEST)
+ontime_data$CRS_DEP_TIME <- as.numeric(ontime_data$CRS_DEP_TIME)
+ontime_data$CRS_DEP_TIME <- cut(ontime_data$CRS_DEP_TIME, breaks=c(-1, 459, 1159, 1759, 2359))
+levels(ontime_data$CRS_DEP_TIME) <- c("Evening", "Morning", "Afternoon", "Evening")
+```
+
+**Month**, **Day of Week**, **Origin airport**, **Destination airport**, and **Scheduled departure time** are confounders which are included in the linear regression model in addition to **airline/carrier**.  The **APPENDIX** analyzes these confounders on an independent basis to illustrate that they indeed impact on-time flight performance using hypothesis tests and confidence intervals.  
+
+Due to the computational complexity and size of the data set, a single linear regression model could not be computed using the entire data set.  As such, I will apply the Monte Carlo method to build **`r n+1`** linear regression models for each case based on random **`r p`**% samples of the data set (without replacement).  The null hypothesis states that the means for each airline (for each case) are equal; while, the alternate hypothesis states that the means are not equal.
+
+$H_0: 0 = \mu_1 = \mu_2 = \mu_3 = ... = \mu_12$  
+$H_\alpha: 0 \neq \mu_1 \neq \mu_2 \neq \mu_3 \neq ... \neq \mu_12$
+
+To evaluate the null hypothesis I compute the 95% confidence interval of the mean delay for each case.  If the confidence intervals do not all overlap we reject the null hypothesis.
+
+
+```{r modBuild, echo=FALSE, message=FALSE, warning=FALSE}
+library(dplyr)
+
+# take an initial sample
+set.seed(1234)
+s <- sample_frac(ontime_data, p/100, replace=FALSE)
+
+# Case 1: fit a linear model for the initial sample, store resulting airline coefficients
+fit1 <- lm(TARGET_DELAY ~ MONTH + DAY_OF_WEEK + CARRIER + ORIGIN + DEST + CRS_DEP_TIME - 1, data=s)
+df1 <- data.frame(name=names(fit1$coefficients), coeff=fit1$coefficients)
+df1 <- df1 %>% filter(substr(name,1,7) == "CARRIER") %>% mutate(name = substr(name, 8, nchar(as.character(name))))
+
+# Case 2: fit a linear model for the initial sample, store resulting airline coefficients
+fit2 <- lm(ARR_DELAY ~ MONTH + DAY_OF_WEEK + CARRIER + ORIGIN + DEST + CRS_DEP_TIME - 1, data=s)
+df2 <- data.frame(name=names(fit2$coefficients), coeff=fit2$coefficients)
+df2 <- df2 %>% filter(substr(name,1,7) == "CARRIER") %>% mutate(name = substr(name, 8, nchar(as.character(name))))
+
+# Computing a model on the entire data set is too memory-intensive
+# Instead, I run Monte Carlo simulations sampling the data set many times and fitting many models
+for (i in 1:n) {
+    # sample data
+    s <- sample_frac(ontime_data, 0.01, replace=FALSE)
+
+    # Case 1: fit a linear model for the sample, store resulting airline coefficients
+    fit1 <- lm(TARGET_DELAY ~ MONTH + DAY_OF_WEEK + CARRIER + ORIGIN + DEST + CRS_DEP_TIME - 1, data=s)
+    df1_i <- data.frame(name=names(fit1$coefficients), coeff=fit1$coefficients)
+    df1_i <- df1_i %>% filter(substr(name,1,7) == "CARRIER") %>% mutate(name = substr(name, 8, nchar(as.character(name))))
+    df1 <- rbind(df1, df1_i)
+    
+    # Case 2: fit a linear model for the sample, store the resulting airline coefficients
+    fit2 <- lm(ARR_DELAY ~ MONTH + DAY_OF_WEEK + CARRIER + ORIGIN + DEST + CRS_DEP_TIME - 1, data=s)
+    df2_i <- data.frame(name=names(fit2$coefficients), coeff=fit2$coefficients)
+    df2_i <- df2_i %>% filter(substr(name,1,7) == "CARRIER") %>% mutate(name = substr(name, 8, nchar(as.character(name))))
+    df2 <- rbind(df2, df2_i)
+}
+
+# Case 1: Compute 95% confidence intervals of the mean for each airline
+df1$name <- as.factor(df1$name)
+l <- tapply(df1$coeff, df1$name, 
+       FUN = function(x) mean(x) + c(-1,0,1) * qnorm(0.975) * sd(x) / sqrt(length(x)))
+df1 <- cbind(names(l), data.frame(matrix(unlist(l), ncol=3, byrow=T)))
+names(df1) <- c("Carrier", "Lower1", "Mean1", "Upper1")
+
+# Case 2: Compute 95% confidence intervals of the mean for each airline
+df2$name <- as.factor(df2$name)
+l <- tapply(df2$coeff, df2$name,
+            FUN = function(x) mean(x) + c(-1,0,1) * qnorm(0.975) * sd(x) / sqrt(length(x)))
+df2 <- cbind(names(l), data.frame(matrix(unlist(l), ncol=3, byrow=T)))
+names(df2) <- c("Carrier", "Lower2", "Mean2", "Upper2")
+
+# Join the two cases and output
+df <- inner_join(df1, df2, by="Carrier")
+knitr::kable(df, caption="Mean delay confidence intervals")
+```
+
+The above table shows that the confidence intervals (ranging from the value *Lower1* to *Upper1* and *Lower2* to *Upper2* for Case 1: Direct and Case2: Connecting respectively) do not overlap; therefore, we reject the null hypothesis and state that the airline/carrier impacts the on-time flight performance for both cases.
+
+## Conclusions
+
+The top 3 airlines for Case 1: Optimizing for a direct flight, and Case 2: Optimizing for a connecting flight are shown below.
+
+```{r Conc, echo=FALSE, message=FALSE, warning=FALSE}
+library(dplyr)
+
+# split the cases and sort each by mean delay
+df <- inner_join(df, carriers, by=c("Carrier"="Code"))
+c1 <- df[,c(8,3)] %>% arrange(Mean1)
+c2 <- df[,c(8,6)] %>% arrange(Mean2)
+names(c1) <- c("Airline", "Mean Delay (min)")
+names(c2) <- c("Airline", "Mean Delay (min)")
+
+# output top 3 airlines for each case
+knitr::kable(head(c1,3), caption="Case 1: Top 3 Airlines")
+knitr::kable(head(c2,3), caption="Case 2: Top 3 Airlines")
+```
+
+The hypothesis is thereby confirmed as the top 3 airlines for on-time performance for the two cases are not the same.  `r c1[1,1]` on average arrives at their destination `r abs(round(c1[1,2], 2))` minutes early relative to an independently calculated target time (**Case 1: Direct Flight Optimization**).  `r c2[1,1]` on average arrives at their destination `r abs(round(c2[1,2],2))` minutes early relative to their own scheduling (**Case 2: Connecting Flight Optimization**) - making them the best option for a connecting flight.
+
+# APPENDIX
 
 In this section I take an independent look at each feature expected to impact the on-time performance of aircraft.
 
@@ -83,12 +183,13 @@ $H_\alpha: 0 \neq \mu_1 \neq \mu_2 \neq \mu_3 \neq ... \neq \mu_12$
 
 For this, I compute the 95% confidence interval for the mean delays for each month (less the overall mean).  If all confidence intervals do not include 0 we reject the null hypothesis.  
 
-```{r monthHypTest, echo=FALSE}
+```{r monthHypTest, echo=FALSE, cache=TRUE}
 # Compute mean and 95% confidence interval for Case 1: Direct Flight
 l <- tapply(ontime_data$TARGET_DELAY-mean(ontime_data$TARGET_DELAY), ontime_data$MONTH,
        FUN = function(x) mean(x) + c(-1,0,1) * qnorm(0.975) * sd(x) / sqrt(length(x)))
 df1 <- cbind(names(l), data.frame(matrix(unlist(l), ncol=3, byrow=T)))
 names(df1) <- c("X", "Lower1", "Mean1", "Upper1")
+lim <- c("Jan", "Feb", "Mar", "Apr")
 
 # Compute mean and 95% confidence interval for Case 2: Connecting Flight
 l <- tapply(ontime_data$ARR_DELAY-mean(ontime_data$ARR_DELAY), ontime_data$MONTH, 
@@ -101,7 +202,7 @@ t <- "Month vs. Flight Delay"
 xl <- "Month"
 ```
 
-```{r plotMonthCI, echo=FALSE, ref.label='plotCI', fig.height=3}
+```{r plotMonthCI, echo=FALSE, ref.label='plotCI', fig.height=3, cache=TRUE}
 ```
 
 Since the confidence intervals for each month do not all contain 0 we reject the null hypothesis and state that the mean delays for each month are not equal.  Therefore we include **Month** as a variable in the final model.
@@ -115,12 +216,13 @@ $H_\alpha: 0 \neq \mu_1 \neq \mu_2 \neq \mu_3 \neq ... \neq \mu_7$
 
 For this, I compute the 95% confidence interval for the mean delays for each day of the week (less the overall mean).  If all confidence intervals do not include 0 we reject the null hypothesis.
 
-```{r weekdayHypTest, echo=FALSE}
+```{r weekdayHypTest, echo=FALSE, cache=TRUE}
 # Compute mean and 95% confidence interval for Case 1: Direct Flight
 l <- tapply(ontime_data$TARGET_DELAY-mean(ontime_data$TARGET_DELAY), ontime_data$DAY_OF_WEEK,
             FUN = function(x) mean(x) + c(-1,0,1) * qnorm(0.975) * sd(x) / sqrt(length(x)))
 df1 <- cbind(c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"), data.frame(matrix(unlist(l), ncol=3, byrow=T)))
 names(df1) <- c("X", "Lower1", "Mean1", "Upper1")
+lim <- c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 
 # Compute mean and 95% confidence interval for Case 2: Connecting Flight
 l <- tapply(ontime_data$ARR_DELAY-mean(ontime_data$ARR_DELAY), ontime_data$DAY_OF_WEEK,
@@ -147,7 +249,10 @@ $H_\alpha: = \neq \mu_1 \neq \mu_2 \neq \mu_3 \neq ... \neq \mu_n$
 
 For this, I compute the 95% confidence interval for the mean delays for each day of the week (less the overall mean).  If all confidence intervals do not include 0 we reject the null hypothesis.
 
-```{r originHet, echo=FALSE, fig.height=3}
+```{r originHet, echo=FALSE, fig.height=3, cache=TRUE}
+library(ggplot2)
+library(dplyr)
+
 # compute mean and 95% confidence interval for Case 1: Direct Flight
 l <- tapply(ontime_data$TARGET_DELAY-mean(ontime_data$TARGET_DELAY), ontime_data$ORIGIN,
             FUN = function(x) mean(x) + c(-1,0,1) * qnorm(0.975) * sd(x) / sqrt(length(x)))
@@ -184,7 +289,9 @@ $H_\alpha: = \neq \mu_1 \neq \mu_2 \neq \mu_3 \neq ... \neq \mu_n$
 
 For this, I compute the 95% confidence interval for the mean delays for each day of the week (less the overall mean).  If all confidence intervals do not include 0 we reject the null hypothesis.
 
-```{r destHet, echo=FALSE, fig.height=3}
+```{r destHet, echo=FALSE, fig.height=3, cache=TRUE}
+library(dplyr)
+
 # compute mean and 95% confidence interval for Case 1: Direct Flight
 l <- tapply(ontime_data$TARGET_DELAY-mean(ontime_data$TARGET_DELAY), ontime_data$DEST,
             FUN = function(x) mean(x) + c(-1,0,1) * qnorm(0.975) * sd(x) / sqrt(length(x)))
@@ -222,10 +329,9 @@ $H_\alpha: 0 \neq \mu_1 \neq \mu_2 \neq \mu_3 \neq ... \neq \mu_7$
 For this, I compute the 95% confidence interval for the mean delays for each day of the week (less the overall mean).  If all confidence intervals do not include 0 we reject the null hypothesis.
 
 ```{r timeDepHypTest, echo=FALSE}
-# compute time categories from actual time
-ontime_data$CRS_DEP_TIME <- as.numeric(ontime_data$CRS_DEP_TIME)
-ontime_data$CRS_DEP_TIME <- cut(ontime_data$CRS_DEP_TIME, breaks=c(-1, 459, 1159, 1759, 2359))
-levels(ontime_data$CRS_DEP_TIME) <- c("Evening", "Morning", "Afternoon", "Evening")
+# reorder time levels
+ontime_data$CRS_DEP_TIME <- ordered(ontime_data$CRS_DEP_TIME, levels=c("Morning", "Afternoon", "Evening"))
+lim <- c("Morning", "Afternoon", "Evening")
 
 # Compute mean and 95% confidence interval for Case 1: Direct Flight
 l <- tapply(ontime_data$TARGET_DELAY-mean(ontime_data$TARGET_DELAY), ontime_data$CRS_DEP_TIME,
@@ -249,13 +355,10 @@ xl <- "Time of Day"
 
 Interestingly we observe opposite relationships between the two cases.  This may reflect shifting scheduled flight times to accommodate varying taxi times, and weather patterns (midday convective currents for example) throughout the day.  Since not all of the 95% confidence intervals include 0, we reject the null hypothesis and include the variable in the final model.
 
-### Airline
-
-## Reusable Code
-
-```{r plotCI, echo=TRUE, eval=FALSE}
+```{r plotCI, echo=FALSE, eval=FALSE}
 library(ggplot2)
 library(reshape2)
+library(dplyr)
 
 # merge dataframes of two cases and clean data
 df <- inner_join(df1, df2, by="X")
@@ -268,7 +371,8 @@ levels(df$Case) <- c("Case 1: Direct Flight", "Case 2: Connecting Flight")
 ggplot(df, aes(X, value, col=Case)) + 
     geom_line(size=10, alpha=0.3) + geom_point(col="black", size=5, pch="-") +
     geom_hline(yintercept=0, size=1) +
-    labs(title=t, x=xl, y="Delay (min)")
+    labs(title=t, x=xl, y="Delay (min)") +
+    scale_x_discrete(limits=lim)
 
 # output confidence interval table for the two cases
 knitr::kable(df1, caption="Case 1: Direct Flight")
