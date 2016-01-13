@@ -161,9 +161,9 @@ img {
 <div id="model-building" class="section level2">
 <h2>Model Building</h2>
 <p><strong>Month</strong>, <strong>Day of Week</strong>, <strong>Origin airport</strong>, <strong>Destination airport</strong>, and <strong>Scheduled departure time</strong> are confounders which are included in the linear regression model in addition to <strong>airline/carrier</strong>. The <strong>APPENDIX</strong> analyzes these confounders on an independent basis to illustrate that they indeed impact on-time flight performance using hypothesis tests and confidence intervals.</p>
-<p>Due to the computational complexity and size of the data set, a single linear regression model could not be computed using the entire data set. As such, I will apply the Monte Carlo method to build <strong>15</strong> linear regression models for each case based on random <strong>0.5</strong>% samples of the data set (without replacement). The null hypothesis states that the means for each airline (for each case) are equal; while, the alternate hypothesis states that the means are not equal.</p>
-<p><span class="math inline">\(H_0: 0 = \mu_1 = \mu_2 = \mu_3 = ... = \mu_12\)</span><br />
-<span class="math inline">\(H_\alpha: 0 \neq \mu_1 \neq \mu_2 \neq \mu_3 \neq ... \neq \mu_12\)</span></p>
+<p>Due to the computational complexity and size of the data set, a single linear regression model could not be computed using the entire data set. As such, I will apply the Monte Carlo method to build <strong>100</strong> linear regression models for each case based on random <strong>0.5</strong>% samples of the data set (without replacement). The null hypothesis states that the means for each airline (for each case) are equal; while, the alternate hypothesis states that the means are not equal.</p>
+<p><span class="math inline">\(H_0: \mu_1 = \mu_2 = \mu_3 = ... = \mu_n\)</span><br />
+<span class="math inline">\(H_\alpha: \mu_1 \neq \mu_2 \neq \mu_3 \neq ... \neq \mu_n\)</span></p>
 <p>To evaluate the null hypothesis I compute the 95% confidence interval of the mean delay for each case. If the confidence intervals do not all overlap we reject the null hypothesis.</p>
 <table>
 <caption>Mean delay confidence intervals</caption>
@@ -181,120 +181,120 @@ img {
 <tbody>
 <tr class="odd">
 <td align="left">AS</td>
-<td align="right">2.2396921</td>
-<td align="right">2.494595</td>
-<td align="right">2.7494990</td>
-<td align="right">-2.6222041</td>
-<td align="right">-2.0107379</td>
-<td align="right">-1.3992716</td>
+<td align="right">2.424682</td>
+<td align="right">2.5280855</td>
+<td align="right">2.6314893</td>
+<td align="right">-2.6067513</td>
+<td align="right">-2.3185042</td>
+<td align="right">-2.0302571</td>
 </tr>
 <tr class="even">
 <td align="left">B6</td>
-<td align="right">-2.1178802</td>
-<td align="right">-1.880114</td>
-<td align="right">-1.6423480</td>
-<td align="right">1.5087362</td>
-<td align="right">2.2992006</td>
-<td align="right">3.0896649</td>
+<td align="right">-1.967748</td>
+<td align="right">-1.8613244</td>
+<td align="right">-1.7549003</td>
+<td align="right">2.4858017</td>
+<td align="right">2.7792117</td>
+<td align="right">3.0726217</td>
 </tr>
 <tr class="odd">
 <td align="left">DL</td>
-<td align="right">-1.4854887</td>
-<td align="right">-1.275544</td>
-<td align="right">-1.0655990</td>
-<td align="right">-1.3732994</td>
-<td align="right">-0.7343473</td>
-<td align="right">-0.0953953</td>
+<td align="right">-1.194854</td>
+<td align="right">-1.1194339</td>
+<td align="right">-1.0440142</td>
+<td align="right">-0.5624122</td>
+<td align="right">-0.3145570</td>
+<td align="right">-0.0667018</td>
 </tr>
 <tr class="even">
 <td align="left">EV</td>
-<td align="right">1.5043176</td>
-<td align="right">1.706531</td>
-<td align="right">1.9087452</td>
-<td align="right">5.8568322</td>
-<td align="right">6.3471378</td>
-<td align="right">6.8374433</td>
+<td align="right">1.706760</td>
+<td align="right">1.7827810</td>
+<td align="right">1.8588025</td>
+<td align="right">6.1975849</td>
+<td align="right">6.4426295</td>
+<td align="right">6.6876740</td>
 </tr>
 <tr class="odd">
 <td align="left">F9</td>
-<td align="right">-1.4175814</td>
-<td align="right">-1.059608</td>
-<td align="right">-0.7016352</td>
-<td align="right">5.1210448</td>
-<td align="right">6.0479401</td>
-<td align="right">6.9748354</td>
+<td align="right">-1.058619</td>
+<td align="right">-0.9312356</td>
+<td align="right">-0.8038521</td>
+<td align="right">5.7702633</td>
+<td align="right">6.1000390</td>
+<td align="right">6.4298146</td>
 </tr>
 <tr class="even">
 <td align="left">FL</td>
-<td align="right">-3.2597187</td>
-<td align="right">-3.032865</td>
-<td align="right">-2.8060103</td>
-<td align="right">-2.8602339</td>
-<td align="right">-1.7472234</td>
-<td align="right">-0.6342130</td>
+<td align="right">-2.921544</td>
+<td align="right">-2.8206899</td>
+<td align="right">-2.7198353</td>
+<td align="right">-1.4889011</td>
+<td align="right">-1.1395414</td>
+<td align="right">-0.7901817</td>
 </tr>
 <tr class="odd">
 <td align="left">HA</td>
-<td align="right">3.1017473</td>
-<td align="right">3.849066</td>
-<td align="right">4.5963856</td>
-<td align="right">0.2651329</td>
-<td align="right">2.4433098</td>
-<td align="right">4.6214866</td>
+<td align="right">3.128643</td>
+<td align="right">3.3832986</td>
+<td align="right">3.6379543</td>
+<td align="right">1.9270159</td>
+<td align="right">2.6491674</td>
+<td align="right">3.3713190</td>
 </tr>
 <tr class="even">
 <td align="left">MQ</td>
-<td align="right">2.6623434</td>
-<td align="right">2.825195</td>
-<td align="right">2.9880473</td>
-<td align="right">3.2541276</td>
-<td align="right">3.8211012</td>
-<td align="right">4.3880749</td>
+<td align="right">2.607564</td>
+<td align="right">2.6772502</td>
+<td align="right">2.7469361</td>
+<td align="right">3.6865411</td>
+<td align="right">3.8910445</td>
+<td align="right">4.0955479</td>
 </tr>
 <tr class="odd">
 <td align="left">OO</td>
-<td align="right">4.2412766</td>
-<td align="right">4.452050</td>
-<td align="right">4.6628237</td>
-<td align="right">3.3374042</td>
-<td align="right">3.9206366</td>
-<td align="right">4.5038691</td>
+<td align="right">4.407472</td>
+<td align="right">4.4881793</td>
+<td align="right">4.5688868</td>
+<td align="right">3.9613419</td>
+<td align="right">4.1919291</td>
+<td align="right">4.4225163</td>
 </tr>
 <tr class="even">
 <td align="left">UA</td>
-<td align="right">-1.2674869</td>
-<td align="right">-1.080015</td>
-<td align="right">-0.8925422</td>
-<td align="right">-1.9260330</td>
-<td align="right">-1.4206524</td>
-<td align="right">-0.9152717</td>
+<td align="right">-1.063621</td>
+<td align="right">-0.9900024</td>
+<td align="right">-0.9163842</td>
+<td align="right">-1.2240455</td>
+<td align="right">-0.9875447</td>
+<td align="right">-0.7510439</td>
 </tr>
 <tr class="odd">
 <td align="left">US</td>
-<td align="right">0.9068061</td>
-<td align="right">1.112096</td>
-<td align="right">1.3173854</td>
-<td align="right">-2.4802025</td>
-<td align="right">-1.8862361</td>
-<td align="right">-1.2922696</td>
+<td align="right">1.130536</td>
+<td align="right">1.2214744</td>
+<td align="right">1.3124132</td>
+<td align="right">-1.9199924</td>
+<td align="right">-1.6676505</td>
+<td align="right">-1.4153085</td>
 </tr>
 <tr class="even">
 <td align="left">VX</td>
-<td align="right">-2.5332316</td>
-<td align="right">-2.232515</td>
-<td align="right">-1.9317990</td>
-<td align="right">-4.3717503</td>
-<td align="right">-3.4788196</td>
-<td align="right">-2.5858890</td>
+<td align="right">-2.150721</td>
+<td align="right">-2.0211977</td>
+<td align="right">-1.8916741</td>
+<td align="right">-3.6007528</td>
+<td align="right">-3.2764593</td>
+<td align="right">-2.9521658</td>
 </tr>
 <tr class="odd">
 <td align="left">WN</td>
-<td align="right">-3.4965420</td>
-<td align="right">-3.346457</td>
-<td align="right">-3.1963728</td>
-<td align="right">5.6231258</td>
-<td align="right">6.2853531</td>
-<td align="right">6.9475803</td>
+<td align="right">-3.329427</td>
+<td align="right">-3.2665910</td>
+<td align="right">-3.2037548</td>
+<td align="right">6.3079155</td>
+<td align="right">6.5522996</td>
+<td align="right">6.7966837</td>
 </tr>
 </tbody>
 </table>
@@ -314,15 +314,15 @@ img {
 <tbody>
 <tr class="odd">
 <td align="left">Southwest Airlines Co.</td>
-<td align="right">-3.346457</td>
+<td align="right">-3.266591</td>
 </tr>
 <tr class="even">
 <td align="left">AirTran Airways Corporation</td>
-<td align="right">-3.032865</td>
+<td align="right">-2.820690</td>
 </tr>
 <tr class="odd">
 <td align="left">Virgin America</td>
-<td align="right">-2.232515</td>
+<td align="right">-2.021198</td>
 </tr>
 </tbody>
 </table>
@@ -337,19 +337,19 @@ img {
 <tbody>
 <tr class="odd">
 <td align="left">Virgin America</td>
-<td align="right">-3.478820</td>
+<td align="right">-3.276459</td>
 </tr>
 <tr class="even">
 <td align="left">Alaska Airlines Inc.</td>
-<td align="right">-2.010738</td>
+<td align="right">-2.318504</td>
 </tr>
 <tr class="odd">
 <td align="left">US Airways Inc. (Merged with America West 9/05. Reporting for both starting 10/07.)</td>
-<td align="right">-1.886236</td>
+<td align="right">-1.667650</td>
 </tr>
 </tbody>
 </table>
-<p>The hypothesis is thereby confirmed as the top 3 airlines for on-time performance for the two cases are not the same. Southwest Airlines Co. on average arrives at their destination 3.35 minutes early relative to an independently calculated target time (<strong>Case 1: Direct Flight Optimization</strong>). Virgin America on average arrives at their destination 3.48 minutes early relative to their own scheduling (<strong>Case 2: Connecting Flight Optimization</strong>) - making them the best option for a connecting flight.</p>
+<p>The hypothesis is thereby confirmed as the top 3 airlines for on-time performance for the two cases are not the same. Southwest Airlines Co. on average arrives at their destination 3.27 minutes early relative to an independently calculated target time (<strong>Case 1: Direct Flight Optimization</strong>). Virgin America on average arrives at their destination 3.28 minutes early relative to their own scheduling (<strong>Case 2: Connecting Flight Optimization</strong>) - making them the best option for a connecting flight.</p>
 </div>
 <div id="appendix" class="section level1">
 <h1>APPENDIX</h1>
