@@ -18,7 +18,7 @@ My criticism of this approach is that it does not consider connecting passengers
 
 I hypothesize that the 3 best airlines for the two cases are different.  To show this, a multivariate regression model will be built for each case to account for confounding variables including **month**, **day of week**, **origin airport**, **destination airport**, and **time of day** in addition to the **airline** variable.
 
-``` {r loadData, echo=FALSE, warning=FALSE, message=FALSE, cache=TRUE}
+``` {r loadData, echo=FALSE, warning=FALSE, message=FALSE}
 library(dplyr)
 
 # load ontime data from files in "data" subdirectory
@@ -52,7 +52,7 @@ ontime_data$TARGET_DELAY <- with(ontime_data, ACTUAL_ELAPSED_TIME - TARGET_TIME)
 
 ## Introduction
 
-This study utilizes aviation on-time performance data provided by the United States Department of Transportation [here](http://www.transtats.bts.gov/DL_SelectFields.asp?Table_ID=236&DB_Short_Name=On-Time).  The study analyzes **`r nrow(ontime_data)`** flights and includes hundreds of dummy variables in the culminating multivariate regression model comparing Cases 1 and 2.  **Case 2** will use the *ARR_DELAY* field to compare against scheduled arrivals.  **Case 1** will use the difference between the gate-to-gate flight time (*ACTUAL_ELAPSED_TIME* field) and the **target time**.  I calculate target time using the simplified formula shown by Ritchie King and Nate Silver.  
+This study utilizes aviation on-time performance data for the 2014 calendar year provided by the United States Department of Transportation [here](http://www.transtats.bts.gov/DL_SelectFields.asp?Table_ID=236&DB_Short_Name=On-Time).  The study analyzes **`r nrow(ontime_data)`** flights and includes hundreds of dummy variables in the culminating multivariate regression model comparing Cases 1 and 2.  **Case 2** will use the *ARR_DELAY* field to compare against scheduled arrivals.  **Case 1** will use the difference between the gate-to-gate flight time (*ACTUAL_ELAPSED_TIME* field) and the **target time**.  I calculate target time using the simplified formula shown by Ritchie King and Nate Silver.  
 
 $target time = 0.117 * distance + 0.517 * (lon origin - lon dest) + 43.2$  
 
@@ -70,8 +70,8 @@ knitr::kable(head(ontime_data, 3)[,8:9])
 
 ```{r modPrep, echo=FALSE}
 # constants for number of monte carlo simulations and fraction of data to sample
-n <- 9
-p <- 1
+n <- 14
+p <- 0.5
 
 # prep data for modeling
 levels(ontime_data$DAY_OF_WEEK) <- c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
@@ -86,11 +86,10 @@ levels(ontime_data$CRS_DEP_TIME) <- c("Evening", "Morning", "Afternoon", "Evenin
 
 Due to the computational complexity and size of the data set, a single linear regression model could not be computed using the entire data set.  As such, I will apply the Monte Carlo method to build **`r n+1`** linear regression models for each case based on random **`r p`**% samples of the data set (without replacement).  The null hypothesis states that the means for each airline (for each case) are equal; while, the alternate hypothesis states that the means are not equal.
 
-$H_0: 0 = \mu_1 = \mu_2 = \mu_3 = ... = \mu_12$  
-$H_\alpha: 0 \neq \mu_1 \neq \mu_2 \neq \mu_3 \neq ... \neq \mu_12$
+$H_0: \mu_1 = \mu_2 = \mu_3 = ... = \mu_n$  
+$H_\alpha: \mu_1 \neq \mu_2 \neq \mu_3 \neq ... \neq \mu_n$
 
 To evaluate the null hypothesis I compute the 95% confidence interval of the mean delay for each case.  If the confidence intervals do not all overlap we reject the null hypothesis.
-
 
 ```{r modBuild, echo=FALSE, message=FALSE, warning=FALSE}
 library(dplyr)
@@ -183,7 +182,7 @@ $H_\alpha: 0 \neq \mu_1 \neq \mu_2 \neq \mu_3 \neq ... \neq \mu_12$
 
 For this, I compute the 95% confidence interval for the mean delays for each month (less the overall mean).  If all confidence intervals do not include 0 we reject the null hypothesis.  
 
-```{r monthHypTest, echo=FALSE, cache=TRUE}
+```{r monthHypTest, echo=FALSE}
 # Compute mean and 95% confidence interval for Case 1: Direct Flight
 l <- tapply(ontime_data$TARGET_DELAY-mean(ontime_data$TARGET_DELAY), ontime_data$MONTH,
        FUN = function(x) mean(x) + c(-1,0,1) * qnorm(0.975) * sd(x) / sqrt(length(x)))
@@ -202,7 +201,7 @@ t <- "Month vs. Flight Delay"
 xl <- "Month"
 ```
 
-```{r plotMonthCI, echo=FALSE, ref.label='plotCI', fig.height=3, cache=TRUE}
+```{r plotMonthCI, echo=FALSE, ref.label='plotCI', fig.height=3}
 ```
 
 Since the confidence intervals for each month do not all contain 0 we reject the null hypothesis and state that the mean delays for each month are not equal.  Therefore we include **Month** as a variable in the final model.
@@ -216,7 +215,7 @@ $H_\alpha: 0 \neq \mu_1 \neq \mu_2 \neq \mu_3 \neq ... \neq \mu_7$
 
 For this, I compute the 95% confidence interval for the mean delays for each day of the week (less the overall mean).  If all confidence intervals do not include 0 we reject the null hypothesis.
 
-```{r weekdayHypTest, echo=FALSE, cache=TRUE}
+```{r weekdayHypTest, echo=FALSE}
 # Compute mean and 95% confidence interval for Case 1: Direct Flight
 l <- tapply(ontime_data$TARGET_DELAY-mean(ontime_data$TARGET_DELAY), ontime_data$DAY_OF_WEEK,
             FUN = function(x) mean(x) + c(-1,0,1) * qnorm(0.975) * sd(x) / sqrt(length(x)))
@@ -249,7 +248,7 @@ $H_\alpha: = \neq \mu_1 \neq \mu_2 \neq \mu_3 \neq ... \neq \mu_n$
 
 For this, I compute the 95% confidence interval for the mean delays for each day of the week (less the overall mean).  If all confidence intervals do not include 0 we reject the null hypothesis.
 
-```{r originHet, echo=FALSE, fig.height=3, cache=TRUE}
+```{r originHet, echo=FALSE, fig.height=3}
 library(ggplot2)
 library(dplyr)
 
@@ -289,7 +288,7 @@ $H_\alpha: = \neq \mu_1 \neq \mu_2 \neq \mu_3 \neq ... \neq \mu_n$
 
 For this, I compute the 95% confidence interval for the mean delays for each day of the week (less the overall mean).  If all confidence intervals do not include 0 we reject the null hypothesis.
 
-```{r destHet, echo=FALSE, fig.height=3, cache=TRUE}
+```{r destHet, echo=FALSE, fig.height=3}
 library(dplyr)
 
 # compute mean and 95% confidence interval for Case 1: Direct Flight
